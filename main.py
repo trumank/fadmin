@@ -52,10 +52,15 @@ def run():
             async for msg in poll():
                 if not client.is_closed:
                     break;
-                str = ''
                 if msg['type'] == 'chat':
                     str = msg['name'] + ': ' + msg['message']
-                await channel.send(str)
+                    asyncio.ensure_future(channel.send(str))
+                if msg['type'] == 'left':
+                    str = '*' + msg['name'] + ' left*'
+                    asyncio.ensure_future(channel.send(str))
+                if msg['type'] == 'joined':
+                    str = '*' + msg['name'] + ' joined*'
+                    asyncio.ensure_future(channel.send(str))
 
         @client.event
         async def on_ready():
