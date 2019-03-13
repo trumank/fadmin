@@ -30,11 +30,14 @@ def run():
         file.write(packet.build({'id': 0, 'type': 3, 'body': os.getenv('RCON_PWD')}))
         file.flush()
 
+        def get():
+            file.write(packet.build({'id': 2, 'type': 2, 'body': '/sc remote.call("fadmin", "poll")'}))
+            file.flush()
+            return packet.parse_stream(file)
+
         async def poll():
             while True:
-                file.write(packet.build({'id': 2, 'type': 2, 'body': '/sc remote.call("fadmin", "poll")'}))
-                file.flush()
-                p = await client.loop.run_in_executor(None, packet.parse_stream(file))
+                p = await client.loop.run_in_executor(None, get())
                 if p.type == 0 and p.id == 2:
                     for msg in json.loads(p.body):
                         yield msg
