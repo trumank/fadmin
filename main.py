@@ -41,7 +41,7 @@ def run():
                 if p.type == 0 and p.id == 2:
                     for msg in json.loads(p.body):
                         yield msg
-                await asyncio.sleep(1)
+                await asyncio.sleep(.1)
 
         client = discord.Client()
 
