@@ -65,7 +65,8 @@ def run():
         async def on_message(message):
             if message.author == client.user or message.channel.id != CHANNEL:
                 return
-            str = '"' + (message.author.nick + '*: ' + message.content).replace('\\', '\\\\').replace('"', '\\"') + '"';
+            name = message.author.nick or message.author.name
+            str = '"' + (name + '*: ' + message.content).replace('\\', '\\\\').replace('"', '\\"') + '"';
             file.write(packet.build({'id': 3, 'type': 2, 'body': '/sc game.print(' + str + ', {.7,.7,.7})'}))
             file.flush()
 
