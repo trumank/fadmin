@@ -130,7 +130,7 @@ script.on_event(defines.events.on_player_died, function(event)
   local cause = nil
   if event.cause ~= nil then
     cause = {type = event.cause.name, player = nil}
-    if event.cause.player ~= nil then
+    if event.cause.type == 'player' and event.cause.player ~= nil then
       cause['player'] = event.cause.player.name
     end
   end
