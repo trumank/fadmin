@@ -147,3 +147,7 @@ remote.add_interface('fadmin', {
     global.events = {}
   end,
 })
+
+script.on_event(defines.events.on_chunk_generated, function(event)
+  event.surface.destroy_decoratives({area=event.area})
+end)
