@@ -19,7 +19,7 @@ def run():
 
     async def poll():
         while True:
-            for msg in json.loads(rcon.send_command('/sc remote.call("fadmin", "poll")')):
+            for msg in json.loads(rcon.send_command('/fadmin poll')):
                 yield msg
             await asyncio.sleep(.1)
 
@@ -54,8 +54,7 @@ def run():
         if message.author == client.user or message.channel.id != CHANNEL:
             return
         name = message.author.nick or message.author.name
-        escaped = '"' + (name + '*: ' + message.content).replace('\\', '\\\\').replace('"', '\\"') + '"';
-        rcon.send_command('/sc game.print(' + escaped + ', {.7,.7,.7})')
+        rcon.send_command('/fadmin chat ' + name + '*: ' + message.content)
 
     client.loop.create_task(my_background_task())
     client.run(os.getenv('DISCORD_TOKEN'))

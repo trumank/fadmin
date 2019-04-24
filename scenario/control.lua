@@ -139,13 +139,24 @@ script.on_event(defines.events.on_player_died, function(event)
   })
 end)
 
-remote.add_interface('fadmin', {
-  poll = function()
-    rcon.print(game.table_to_json(global.events))
-    global.events = {}
-  end,
-})
+commands.add_command('fadmin', 'FAdmin internal', function(event)
+  if event.player_index == nil then
+    parameter = event.parameter == nil and '' or event.parameter
+    local res = string.match(parameter, 'poll')
+    if res ~= nil then
+      rcon.print(game.table_to_json(global.events))
+      global.events = {}
+    end
+    res = string.match(parameter, 'chat (.*)')
+    if res ~= nil then
+        game.print(res, {.7,.7,.7})
+        print(res)
+    end
+  end
+end)
 
 script.on_event(defines.events.on_chunk_generated, function(event)
   event.surface.destroy_decoratives({area=event.area})
 end)
+
+
