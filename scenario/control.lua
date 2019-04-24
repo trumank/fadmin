@@ -96,8 +96,6 @@ remote.add_interface("freeplay",
 
 -- fadmin --
 
-local json = require('json')
-
 script.on_event(defines.events.on_console_chat, function(event)
   local name
   if event.player_index == nil then
@@ -143,7 +141,7 @@ end)
 
 remote.add_interface('fadmin', {
   poll = function()
-    rcon.print(json.encode(global.events))
+    rcon.print(game.table_to_json(global.events))
     global.events = {}
   end,
 })
