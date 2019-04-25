@@ -4,10 +4,7 @@ import asyncio
 import discord
 import json
 import os
-import sys
-import threading
 import factorio_rcon
-from time import sleep
 from dotenv import load_dotenv
 
 load_dotenv()
