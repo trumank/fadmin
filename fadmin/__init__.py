@@ -35,12 +35,34 @@ def run():
             if msg['type'] == 'chat':
                 str = msg['name'] + ': ' + msg['message']
                 asyncio.ensure_future(channel.send(str))
-            if msg['type'] == 'left':
+            elif msg['type'] == 'left':
                 str = '*' + msg['name'] + ' left*'
                 asyncio.ensure_future(channel.send(str))
-            if msg['type'] == 'joined':
+            elif msg['type'] == 'joined':
                 str = '*' + msg['name'] + ' joined*'
                 asyncio.ensure_future(channel.send(str))
+            elif msg['type'] == 'died':
+                cause = None
+                if msg['cause']['type'] == 'locomotive':
+                    cause = ' was squished by a rogue train'
+                elif msg['cause']['type'] == 'player':
+                    if msg['cause']['player'] == msg['name']:
+                        cause = ' lost their will to live'
+                    else:
+                        cause = ' was brutally murdered by ' + msg['cause']['player']
+                elif msg['cause']['type'] == 'tank':
+                    cause = ' was hiding in a tank\'s blind spot'
+                elif msg['cause']['type'] == 'car':
+                    cause = ' was involved in a hit and run'
+                elif msg['cause']['type'] == 'artillery-turret':
+                    cause = ' was mistaken for the enemy'
+                else:
+                    cause = ' died of mysterious causes'
+
+                str = '*' + msg['name'] + cause + '*'
+                asyncio.ensure_future(channel.send(str))
+            else:
+                print(msg)
 
     @client.event
     async def on_ready():
