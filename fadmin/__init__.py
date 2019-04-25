@@ -11,25 +11,67 @@ load_dotenv()
 
 CHANNEL = int(os.getenv('DISCORD_CHANNEL'))
 
-def run():
-    rcon = factorio_rcon.RCONClient(os.getenv('RCON_HOST'), int(os.getenv('RCON_PORT')), os.getenv('RCON_PWD'))
+class RecoveringRCON:
+    rcon = None
 
-    async def poll():
+    connecting = False
+
+    def __init__(self, host, port, pwd, onmsg=None):
+        self.host = host
+        self.port = port
+        self.pwd = pwd
+
+        self.onmsg = onmsg
+
+    async def connect(self):
+        if self.connecting:
+            return
+        self.connecting = True
         while True:
-            for msg in json.loads(rcon.send_command('/fadmin poll')):
-                yield msg
+            try:
+                self.rcon = factorio_rcon.RCONClient(self.host, self.port, self.pwd)
+                version = self.rcon.send_command('/version')
+            except ConnectionError:
+                #print('connection failed, retrying in 2 seconds')
+                await asyncio.sleep(2)
+            else:
+                await self.onmsg({ 'type': 'connected', 'version': version })
+                self.connecting = False
+                break
+
+    async def send(self, msg):
+        try:
+            self.rcon.send_command(msg)
+        except ConnectionError:
+            await self.connect()
+        return None
+
+    async def poll(self):
+        while True:
+            if self.rcon is not None:
+                try:
+                    for msg in json.loads(self.rcon.send_command('/fadmin poll')):
+                        await self.onmsg(msg)
+                except ConnectionError:
+                    await self.onmsg({ 'type': 'disconnected' })
+                    await self.connect()
             await asyncio.sleep(.1)
+
+def run():
+    rcon = RecoveringRCON(os.getenv('RCON_HOST'), int(os.getenv('RCON_PORT')), os.getenv('RCON_PWD'))
 
     client = discord.Client()
 
     async def my_background_task():
         await client.wait_until_ready()
-        counter = 0
         channel = client.get_channel(CHANNEL)
-        async for msg in poll():
-            if not client.is_closed:
-                break;
-            if msg['type'] == 'chat':
+
+        async def onmsg(msg):
+            if msg['type'] == 'connected':
+                asyncio.ensure_future(channel.send('*Server is online (' + msg['version'] + ')*'))
+            elif msg['type'] == 'disconnected':
+                asyncio.ensure_future(channel.send('*Server is offline*'))
+            elif msg['type'] == 'chat':
                 str = msg['name'] + ': ' + msg['message']
                 asyncio.ensure_future(channel.send(str))
             elif msg['type'] == 'left':
@@ -61,6 +103,10 @@ def run():
             else:
                 print(msg)
 
+        rcon.onmsg = onmsg
+        await rcon.connect()
+        await rcon.poll()
+
     @client.event
     async def on_ready():
         print('Logged in as')
@@ -73,10 +119,9 @@ def run():
         if message.author == client.user or message.channel.id != CHANNEL:
             return
         name = message.author.nick or message.author.name
-        rcon.send_command('/fadmin chat ' + name + '*: ' + message.content)
+        await rcon.send('/fadmin chat ' + name + '*: ' + message.content)
 
     client.loop.create_task(my_background_task())
     client.run(os.getenv('DISCORD_TOKEN'))
 
 run()
-
