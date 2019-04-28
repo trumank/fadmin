@@ -82,7 +82,9 @@ def run():
                 asyncio.ensure_future(channel.send(str))
             elif msg['type'] == 'died':
                 cause = None
-                if msg['cause']['type'] == 'locomotive':
+                if msg.get('cause', None) == None:
+                    cause = ' died of mysterious causes'
+                elif msg['cause']['type'] == 'locomotive':
                     cause = ' was squished by a rogue train'
                 elif msg['cause']['type'] == 'player':
                     if msg['cause']['player'] == msg['name']:
