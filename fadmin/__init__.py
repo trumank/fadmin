@@ -57,7 +57,7 @@ class RecoveringRCON:
                     await self.connect()
             await asyncio.sleep(.1)
 
-def run():
+def main():
     rcon = RecoveringRCON(os.getenv('RCON_HOST'), int(os.getenv('RCON_PORT')), os.getenv('RCON_PWD'))
 
     client = discord.Client()
@@ -131,5 +131,3 @@ def run():
         client.loop.run_until_complete(client.logout())
     finally:
         client.loop.close()
-
-run()
