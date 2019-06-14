@@ -123,7 +123,13 @@ def run():
         name = message.author.nick or message.author.name
         await rcon.send('/fadmin chat ' + name + '*: ' + message.content)
 
-    client.loop.create_task(my_background_task())
-    client.run(os.getenv('DISCORD_TOKEN'))
+    try:
+        task = client.loop.create_task(my_background_task())
+        client.loop.run_until_complete(client.start(os.getenv('DISCORD_TOKEN')))
+    except KeyboardInterrupt:
+        task.cancel()
+        client.loop.run_until_complete(client.logout())
+    finally:
+        client.loop.close()
 
 run()
