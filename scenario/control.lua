@@ -67,6 +67,15 @@ script.on_init(function()
   -- fadmin --
   global.events = {}
   global.player_data = {}
+
+  local default = game.permissions.get_group('Default')
+  default.set_allows_action(defines.input_action.toggle_map_editor, false)
+
+  local jail = game.permissions.create_group('Jail')
+  for k, v in pairs(defines.input_action) do
+    jail.set_allows_action(v, false)
+  end
+  jail.set_allows_action(defines.input_action.write_to_console, true)
 end)
 
 silo_script.add_remote_interface()
