@@ -66,6 +66,7 @@ script.on_init(function()
 
   -- fadmin --
   global.events = {}
+  global.player_data = {}
 end)
 
 silo_script.add_remote_interface()
@@ -102,6 +103,29 @@ script.on_event(defines.events.on_console_chat, function(event)
     name = '<server>'
   else
     name = game.players[event.player_index].name
+
+    -- message rate limiting
+    local rate = 5
+    local per  = 8 * 60
+    if global.player_data[event.player_index] == nil then
+      global.player_data[event.player_index] = {
+        rl_allowance = rate,
+        rl_last_check = event.tick
+      }
+    else
+      local player = global.player_data[event.player_index];
+      local time_passed = event.tick - player.rl_last_check
+      player.rl_last_check = event.tick
+      player.rl_allowance = player.rl_allowance + time_passed * (rate / per);
+      if player.rl_allowance > rate then
+        player.rl_allowance = rate
+      end
+      if player.rl_allowance < 1 then
+        game.kick_player(game.players[event.player_index])
+      else
+        player.rl_allowance = player.rl_allowance - 1;
+      end
+    end
   end
   table.insert(global.events, {
     type = 'chat',
