@@ -9,7 +9,7 @@ fadmin = "fadmin:main"
 
 [tool.poetry.dependencies]
 python = "^3.7"
-"discord.py" = "^1.0"
+"discord.py" = "^1.3.2"
 python-dotenv = "^0.10.1"
 factorio-rcon-py = "^0.0.2"
 
