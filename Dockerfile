@@ -10,7 +10,9 @@ ENV YOUR_ENV=${YOUR_ENV} \
   PIP_NO_CACHE_DIR=off \
   PIP_DISABLE_PIP_VERSION_CHECK=on \
   PIP_DEFAULT_TIMEOUT=100 \
-  POETRY_VERSION=0.12.11
+  POETRY_VERSION=1.0.3
+
+RUN apk update && apk add build-base libffi-dev openssl-dev postgresql-dev python3-dev musl-dev
 
 # System deps:
 RUN pip install "poetry==$POETRY_VERSION"
@@ -20,7 +22,7 @@ WORKDIR /code
 COPY poetry.lock pyproject.toml /code/
 
 # Project initialization:
-RUN poetry config settings.virtualenvs.create false \
+RUN poetry config virtualenvs.create false \
   && poetry install $(test "$YOUR_ENV" == production && echo "--no-dev") --no-interaction --no-ansi
 
 # Creating folders, and files for a project:
