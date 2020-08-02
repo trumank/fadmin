@@ -121,7 +121,7 @@ def main():
         if message.author == client.user or message.channel.id != CHANNEL:
             return
         name = message.author.nick or message.author.name
-        await rcon.send('/fadmin chat ' + name + '*: ' + message.content)
+        await rcon.send('/fadmin chat ' + name + '*: ' + message.clean_content)
 
     try:
         task = client.loop.create_task(my_background_task())
