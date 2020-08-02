@@ -68,18 +68,18 @@ def main():
 
         async def onmsg(msg):
             if msg['type'] == 'connected':
-                asyncio.ensure_future(channel.send('*Server is online (' + msg['version'] + ')*'))
+                asyncio.ensure_future(channel.send(discord.utils.escape_mentions('*Server is online (' + msg['version'] + ')*')))
             elif msg['type'] == 'disconnected':
-                asyncio.ensure_future(channel.send('*Server is offline*'))
+                asyncio.ensure_future(channel.send(discord.utils.escape_mentions('*Server is offline*')))
             elif msg['type'] == 'chat':
                 str = msg['name'] + ': ' + msg['message']
-                asyncio.ensure_future(channel.send(str))
+                asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
             elif msg['type'] == 'left':
                 str = '*' + msg['name'] + ' left*'
-                asyncio.ensure_future(channel.send(str))
+                asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
             elif msg['type'] == 'joined':
                 str = '*' + msg['name'] + ' joined*'
-                asyncio.ensure_future(channel.send(str))
+                asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
             elif msg['type'] == 'died':
                 cause = None
                 if msg.get('cause', None) == None:
@@ -101,7 +101,7 @@ def main():
                     cause = ' died of mysterious causes'
 
                 str = '*' + msg['name'] + cause + '*'
-                asyncio.ensure_future(channel.send(str))
+                asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
             else:
                 print(msg)
 
