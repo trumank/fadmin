@@ -55,7 +55,7 @@ class RecoveringRCON:
                 except ConnectionError:
                     await self.onmsg({ 'type': 'disconnected' })
                     await self.connect()
-            await asyncio.sleep(.1)
+            await asyncio.sleep(.5)
 
 def main():
     rcon = RecoveringRCON(os.getenv('RCON_HOST'), int(os.getenv('RCON_PORT')), os.getenv('RCON_PWD'))
