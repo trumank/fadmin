@@ -187,9 +187,3 @@ commands.add_command('fadmin', 'FAdmin internal', function(event)
     end
   end
 end)
-
-script.on_event(defines.events.on_chunk_generated, function(event)
-  event.surface.destroy_decoratives({area=event.area})
-end)
-
-
