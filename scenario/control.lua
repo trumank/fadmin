@@ -76,6 +76,8 @@ script.on_init(function()
     jail.set_allows_action(v, false)
   end
   jail.set_allows_action(defines.input_action.write_to_console, true)
+
+  game.forces['player'].research_queue_enabled = true
 end)
 
 silo_script.add_remote_interface()
