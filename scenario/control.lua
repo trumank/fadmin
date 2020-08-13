@@ -67,6 +67,7 @@ script.on_init(function()
   -- fadmin --
   global.events = {}
   global.player_data = {}
+  global.spawned_tag = false
 
   local default = game.permissions.get_group('Default')
   default.set_allows_action(defines.input_action.toggle_map_editor, false)
@@ -186,6 +187,17 @@ commands.add_command('fadmin', 'FAdmin internal', function(event)
     if res ~= nil then
         game.print(res, {.7,.7,.7})
         print(res)
+    end
+  end
+end)
+
+
+script.on_event(defines.events.on_chunk_charted, function(event)
+  if not global.spawned_tag then
+    local surface = game.surfaces[event.surface_index]
+    if surface.name == 'nauvis' and event.position.x == 0 and event.position.y == 0 then
+      game.forces['player'].add_chart_tag(surface, {icon={type='virtual', name='signal-info'}, text='https://discord.gg/ZwMvyrs', position={0, 0}})
+      global.spawned_tag = true
     end
   end
 end)
