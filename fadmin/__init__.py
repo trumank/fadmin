@@ -4,6 +4,7 @@ import asyncio
 import discord
 import json
 import os
+import traceback
 import factorio_rcon
 from dotenv import load_dotenv
 
@@ -67,43 +68,46 @@ def main():
         channel = client.get_channel(CHANNEL)
 
         async def onmsg(msg):
-            if msg['type'] == 'connected':
-                asyncio.ensure_future(channel.send(discord.utils.escape_mentions('*Server is online (' + msg['version'] + ')*')))
-            elif msg['type'] == 'disconnected':
-                asyncio.ensure_future(channel.send(discord.utils.escape_mentions('*Server is offline*')))
-            elif msg['type'] == 'chat':
-                str = msg['name'] + ': ' + msg['message']
-                asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
-            elif msg['type'] == 'left':
-                str = '*' + msg['name'] + ' left*'
-                asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
-            elif msg['type'] == 'joined':
-                str = '*' + msg['name'] + ' joined*'
-                asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
-            elif msg['type'] == 'died':
-                cause = None
-                if msg.get('cause', None) == None:
-                    cause = ' died of mysterious causes'
-                elif msg['cause']['type'] == 'locomotive':
-                    cause = ' was squished by a rogue train'
-                elif msg['cause']['type'] == 'character':
-                    if msg['cause']['player'] == msg['name']:
-                        cause = ' lost their will to live'
+            try:
+                if msg['type'] == 'connected':
+                    asyncio.ensure_future(channel.send(discord.utils.escape_mentions('*Server is online (' + msg['version'] + ')*')))
+                elif msg['type'] == 'disconnected':
+                    asyncio.ensure_future(channel.send(discord.utils.escape_mentions('*Server is offline*')))
+                elif msg['type'] == 'chat':
+                    str = msg['name'] + ': ' + msg['message']
+                    asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
+                elif msg['type'] == 'left':
+                    str = '*' + msg['name'] + ' left*'
+                    asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
+                elif msg['type'] == 'joined':
+                    str = '*' + msg['name'] + ' joined*'
+                    asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
+                elif msg['type'] == 'died':
+                    cause = None
+                    if msg.get('cause', None) == None:
+                        cause = ' died of mysterious causes'
+                    elif msg['cause']['type'] == 'locomotive':
+                        cause = ' was squished by a rogue train'
+                    elif msg['cause']['type'] == 'character':
+                        if msg['cause']['player'] == msg['name']:
+                            cause = ' lost their will to live'
+                        else:
+                            cause = ' was brutally murdered by ' + msg['cause']['player']
+                    elif msg['cause']['type'] == 'tank':
+                        cause = ' was hiding in a tank\'s blind spot'
+                    elif msg['cause']['type'] == 'car':
+                        cause = ' was involved in a hit and run'
+                    elif msg['cause']['type'] == 'artillery-turret':
+                        cause = ' was mistaken for the enemy'
                     else:
-                        cause = ' was brutally murdered by ' + msg['cause']['player']
-                elif msg['cause']['type'] == 'tank':
-                    cause = ' was hiding in a tank\'s blind spot'
-                elif msg['cause']['type'] == 'car':
-                    cause = ' was involved in a hit and run'
-                elif msg['cause']['type'] == 'artillery-turret':
-                    cause = ' was mistaken for the enemy'
-                else:
-                    cause = f' was killed by {msg["cause"]["type"]}'
+                        cause = f' was killed by {msg["cause"]["type"]}'
 
-                str = '*' + msg['name'] + cause + '*'
-                asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
-            else:
-                print(msg)
+                    str = '*' + msg['name'] + cause + '*'
+                    asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
+                else:
+                    print(msg)
+            except Exception:
+                traceback.print_exc()
 
         rcon.onmsg = onmsg
         await rcon.connect()
