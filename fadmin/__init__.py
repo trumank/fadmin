@@ -98,7 +98,7 @@ def main():
                 elif msg['cause']['type'] == 'artillery-turret':
                     cause = ' was mistaken for the enemy'
                 else:
-                    cause = f' died of mysterious causes. {msg['cause']['type']}'
+                    cause = f' was killed by {msg["cause"]["type"]}'
 
                 str = '*' + msg['name'] + cause + '*'
                 asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
