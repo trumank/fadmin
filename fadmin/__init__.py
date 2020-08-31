@@ -86,7 +86,7 @@ def main():
                     cause = ' died of mysterious causes'
                 elif msg['cause']['type'] == 'locomotive':
                     cause = ' was squished by a rogue train'
-                elif msg['cause']['type'] == 'player':
+                elif msg['cause']['type'] == 'character':
                     if msg['cause']['player'] == msg['name']:
                         cause = ' lost their will to live'
                     else:
