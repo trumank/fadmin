@@ -130,6 +130,19 @@ def main():
 
                     str = '*' + msg['name'] + cause + '*'
                     asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
+                elif msg['type'] == 'promoted':
+                    pass # do nothing as it fires upon player joining for first time and not at time of promotion which makes it meaningless
+                elif msg['type'] == 'demoted':
+                    pass
+                elif msg['type'] == 'kicked':
+                    str = '*{name} was kicked by {by_player}{r}*'.format(r=f': {msg["reason"]}' if msg.get('reason') else '', **msg)
+                    asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
+                elif msg['type'] == 'banned':
+                    str = '*{name} was banned by {by_player}{r}*'.format(r=f': {msg["reason"]}' if msg.get('reason') else '', **msg)
+                    asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
+                elif msg['type'] == 'unbanned':
+                    str = '*{name} was unbanned by {by_player}{r}*'.format(r=f': {msg["reason"]}' if msg.get('reason') else '', **msg)
+                    asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
                 else:
                     print(msg)
             except Exception:
