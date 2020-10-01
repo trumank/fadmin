@@ -82,6 +82,9 @@ def main():
                 elif msg['type'] == 'joined':
                     str = '*' + msg['name'] + ' joined*'
                     asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
+                elif msg['type'] == 'promote':
+                    str = '*' + msg['message'] + '*'
+                    asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
                 elif msg['type'] == 'died':
                     cause = None
                     if msg.get('cause', None) == None:
