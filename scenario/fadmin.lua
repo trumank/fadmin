@@ -74,6 +74,62 @@ on_chunk_charted = function(event)
   end
 end
 
+on_player_promoted = function(event)
+  table.insert(global.events, {
+    type = 'promoted',
+    name = game.players[event.player_index].name
+  })
+end
+
+on_player_demoted = function(event)
+  table.insert(global.events, {
+    type = 'demoted',
+    name = game.players[event.player_index].name
+  })
+end
+
+on_player_kicked = function(event)
+  if event.by_player == nil then
+    by_player = '<server>'
+  else
+    by_player = game.players[event.by_player].name
+  end
+  table.insert(global.events, {
+    type = 'kicked',
+    name = game.players[event.player_index].name,
+    by_player = by_player,
+    reason = event.reason
+  })
+end
+
+on_player_banned = function(event)
+  if event.by_player == nil then
+    by_player = '<server>'
+  else
+    by_player = game.players[event.by_player].name
+  end
+  table.insert(global.events, {
+    type = 'banned',
+    name = event.player_name,
+    by_player = by_player,
+    reason = event.reason
+  })
+end
+
+on_player_unbanned = function(event)
+  if event.by_player == nil then
+    by_player = '<server>'
+  else
+    by_player = game.players[event.by_player].name
+  end
+  table.insert(global.events, {
+    type = 'unbanned',
+    name = event.player_name,
+    by_player = by_player,
+    reason = event.reason
+  })
+end
+
 local fadmin = {}
 
 fadmin.events =
@@ -82,7 +138,12 @@ fadmin.events =
   [defines.events.on_player_joined_game] = on_player_joined_game,
   [defines.events.on_player_left_game] = on_player_left_game,
   [defines.events.on_player_died] = on_player_died,
-  [defines.events.on_chunk_charted] = on_chunk_charted
+  [defines.events.on_chunk_charted] = on_chunk_charted,
+  [defines.events.on_player_promoted] = on_player_promoted,
+  [defines.events.on_player_demoted] = on_player_demoted,
+  [defines.events.on_player_kicked] = on_player_kicked,
+  [defines.events.on_player_banned] = on_player_banned,
+  [defines.events.on_player_unbanned] = on_player_unbanned
 }
 
 fadmin.on_init = function()
