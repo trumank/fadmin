@@ -82,9 +82,6 @@ def main():
                 elif msg['type'] == 'joined':
                     str = '*' + msg['name'] + ' joined*'
                     asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
-                elif msg['type'] == 'promote':
-                    str = '*' + msg['message'] + '*'
-                    asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
                 elif msg['type'] == 'died':
                     cause = None
                     if msg.get('cause', None) == None:
@@ -106,6 +103,21 @@ def main():
                         cause = f' was killed by {msg["cause"]["type"]}'
 
                     str = '*' + msg['name'] + cause + '*'
+                    asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
+                elif msg['type'] == 'promoted':
+                    str = '*' + msg['name'] + ' was promoted*'
+                    asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
+                elif msg['type'] == 'demoted':
+                    str = '*' + msg['name'] + ' was demoted*'
+                    asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
+                elif msg['type'] == 'kicked':
+                    str = '*' + msg['name'] + ' was kicked by ' + msg['by_player'] + '\nReason: ' + 'msg['reason']' + '*'
+                    asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
+                elif msg['type'] == 'banned':
+                    str = '*' + msg['name'] + ' was banned by ' + msg['by_player'] + '\nReason: ' + 'msg['reason']' + '*'
+                    asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
+                elif msg['type'] == 'unbanned':
+                    str = '*' + msg['name'] + ' was unbanned by ' + msg['by_player'] + '\nReason: ' + 'msg['reason']' + '*'
                     asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
                 else:
                     print(msg)
