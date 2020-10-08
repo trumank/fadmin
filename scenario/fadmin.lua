@@ -74,15 +74,26 @@ on_chunk_charted = function(event)
   end
 end
 
+output_status = function()
+  table.insert(global.events, {
+    type = 'chat',
+    name = "<server>",
+    message = "SPM over last 10h " .. game.forces["player"].item_production_statistics.get_flow_count({name="space-science-pack", input=false, precision_index=defines.flow_precision_index.ten_hours})
+  })
+end
+
 local fadmin = {}
 
-fadmin.events =
-{
+fadmin.events = {
   [defines.events.on_console_chat] = on_console_chat,
   [defines.events.on_player_joined_game] = on_player_joined_game,
   [defines.events.on_player_left_game] = on_player_left_game,
   [defines.events.on_player_died] = on_player_died,
   [defines.events.on_chunk_charted] = on_chunk_charted
+}
+
+fadmin.on_nth_tick = {
+  [60*60*60*24] = output_status
 }
 
 fadmin.on_init = function()
