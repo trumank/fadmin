@@ -11,11 +11,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 CHANNEL = int(os.getenv('DISCORD_CHANNEL'))
+STATUS_FREQUENCY = int(os.getenv('STATUS_FREQUENCY') or '0')
+
+# obsolete in python 3.9
+def removesuffix(text, prefix):
+    return text[:-len(prefix)] if text.endswith(prefix) else text
 
 class RecoveringRCON:
     rcon = None
-
     connecting = False
+    version = None
 
     def __init__(self, host, port, pwd, onmsg=None):
         self.host = host
@@ -31,12 +36,12 @@ class RecoveringRCON:
         while True:
             try:
                 self.rcon = factorio_rcon.RCONClient(self.host, self.port, self.pwd)
-                version = self.rcon.send_command('/version')
+                self.version = self.rcon.send_command('/version')
             except ConnectionError:
                 #print('connection failed, retrying in 2 seconds')
                 await asyncio.sleep(2)
             else:
-                await self.onmsg({ 'type': 'connected', 'version': version })
+                await self.onmsg({ 'type': 'connected', 'version': self.version })
                 self.connecting = False
                 break
 
@@ -46,6 +51,23 @@ class RecoveringRCON:
         except ConnectionError:
             await self.connect()
         return None
+
+    async def get_players(self):
+        return [removesuffix(line.strip(), ' (online)') for line in self.rcon.send_command('/players online').splitlines()[1:]]
+
+    async def get_player_status(self):
+        try:
+            players = await self.get_players()
+            return '{} {} online'.format(len(players), 'player' if len(players) == 1 else 'players')
+        except ConnectionError:
+            return None
+
+    async def get_server_status(self):
+        try:
+            players = await self.get_players()
+            return 'Version {} - Online players ({}): {}'.format(self.version, len(players), ', '.join(players))
+        except ConnectionError:
+            return 'Offline'
 
     async def poll(self):
         while True:
@@ -63,7 +85,9 @@ def main():
 
     client = discord.Client()
 
-    async def my_background_task():
+    since_last_update = 0
+
+    async def background():
         await client.wait_until_ready()
         channel = client.get_channel(CHANNEL)
 
@@ -77,10 +101,12 @@ def main():
                     str = msg['name'] + ': ' + msg['message']
                     asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
                 elif msg['type'] == 'left':
-                    str = '*' + msg['name'] + ' left*'
+                    p = await rcon.get_player_status()
+                    str = '*' + msg['name'] + ' left' + (' - ' + p if p else '') + '*'
                     asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
                 elif msg['type'] == 'joined':
-                    str = '*' + msg['name'] + ' joined*'
+                    p = await rcon.get_player_status()
+                    str = '*' + msg['name'] + ' joined' + (' - ' + p if p else '') + '*'
                     asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
                 elif msg['type'] == 'died':
                     cause = None
@@ -109,26 +135,36 @@ def main():
             except Exception:
                 traceback.print_exc()
 
+        @client.event
+        async def on_ready():
+            print('Logged in as')
+            print(client.user.name)
+            print(client.user.id)
+            print('------')
+
+        @client.event
+        async def on_message(message):
+            if message.channel.id != CHANNEL:
+                return
+
+            nonlocal since_last_update
+            since_last_update += 1
+            if STATUS_FREQUENCY != 0 and since_last_update > STATUS_FREQUENCY:
+                since_last_update = 0
+                asyncio.ensure_future(channel.send(discord.utils.escape_mentions('*' + await rcon.get_server_status() + '*')))
+
+            if message.author == client.user:
+                return
+            name = message.author.nick or message.author.name
+            await rcon.send('/fadmin chat ' + name + '*: ' + message.clean_content)
+
         rcon.onmsg = onmsg
         await rcon.connect()
         await rcon.poll()
 
-    @client.event
-    async def on_ready():
-        print('Logged in as')
-        print(client.user.name)
-        print(client.user.id)
-        print('------')
-
-    @client.event
-    async def on_message(message):
-        if message.author == client.user or message.channel.id != CHANNEL:
-            return
-        name = message.author.nick or message.author.name
-        await rcon.send('/fadmin chat ' + name + '*: ' + message.clean_content)
 
     try:
-        task = client.loop.create_task(my_background_task())
+        task = client.loop.create_task(background())
         client.loop.run_until_complete(client.start(os.getenv('DISCORD_TOKEN')))
     except KeyboardInterrupt:
         task.cancel()
