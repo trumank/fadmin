@@ -28,10 +28,19 @@ on_console_chat = function(event)
       end
     end
   end
+  
+  --console command !rockets
+  local text = event.message
+  if( event.message == "!rockets" ) then
+	    text = "satellites launched: " .. game.forces["player"].items_launched["satellite"]
+	    game.print( text, {0,1,1}) 
+	    name = '<server>'
+  end
+  
   table.insert(global.events, {
     type = 'chat',
     name = name,
-    message = event.message
+    message = text
   })
 end
 
@@ -176,6 +185,14 @@ fadmin.add_commands = function()
       if res ~= nil then
           game.print(res, {.7,.7,.7})
           print(res)
+          --console command !rockets
+          if( string.find( res, '!rockets') ~= nil ) then
+				      on_console_chat( {
+					        type = 'chat',
+					        name = nil,
+					        message = "!rockets"
+					    })
+          end  
       end
     end
   end)
