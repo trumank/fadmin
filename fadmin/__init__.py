@@ -58,14 +58,14 @@ class RecoveringRCON:
     async def get_player_status(self):
         try:
             players = await self.get_players()
-            return '{} {} online'.format(len(players), 'player' if len(players) == 1 else 'players')
+            return f"{len(players)} {'player' if len(players) == 1 else 'players'}"
         except ConnectionError:
             return None
 
     async def get_server_status(self):
         try:
             players = await self.get_players()
-            return 'Version {} - Online players ({}): {}'.format(self.version, len(players), ', '.join(players))
+            return f"Version {self.version} - Online players ({len(players)}): {', '.join(players)}"
         except ConnectionError:
             return 'Offline'
 
@@ -94,41 +94,55 @@ def main():
         async def onmsg(msg):
             try:
                 if msg['type'] == 'connected':
-                    asyncio.ensure_future(channel.send(discord.utils.escape_mentions('*Server is online (' + msg['version'] + ')*')))
+                    asyncio.ensure_future(channel.send(discord.utils.escape_mentions(f"*Server is online ({msg['version']})*")))
                 elif msg['type'] == 'disconnected':
                     asyncio.ensure_future(channel.send(discord.utils.escape_mentions('*Server is offline*')))
                 elif msg['type'] == 'chat':
-                    str = msg['name'] + ': ' + msg['message']
+                    str = f"{msg['name']}: {msg['message']}"
                     asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
                 elif msg['type'] == 'left':
                     p = await rcon.get_player_status()
-                    str = '*' + msg['name'] + ' left' + (' - ' + p if p else '') + '*'
+                    str = f"*{msg['name']} left{' - ' + p if p else ''}*"
                     asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
                 elif msg['type'] == 'joined':
                     p = await rcon.get_player_status()
-                    str = '*' + msg['name'] + ' joined' + (' - ' + p if p else '') + '*'
+                    str = f"*{msg['name']} joined{' - ' + p if p else ''}*"
                     asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
                 elif msg['type'] == 'died':
+                    text = {
+                        None: ' died of mysterious causes',
+                        'locomotive': ' was squished by a rogue train',
+                        'cargo-wagon': ' tried to sneak under a moving train',
+                        'fluid-wagon': ' tried to rob a train of it\'s oil',
+                        'tank': ' was hiding in a tank\'s blind spot',
+                        'car': ' was involved in a hit and run',
+                        'artillery-turret': ' was mistaken for the enemy',
+                        'spidertron': ' has a serious case of arachnophobia'
+                        # 'behemoth-biter': '',
+                        # 'big-biter': '',
+                        # 'medium-biter': '',
+                        # 'small-biter': '',
+                        # 'behemoth-spitter': '',
+                        # 'big-spitter': '',
+                        # 'medium-spitter': '',
+                        # 'small-spitter': '',
+                        # 'behemoth-worm-turret': '',
+                        # 'big-worm-turret': '',
+                        # 'medium-worm-turret': '',
+                        # 'small-worm-turret': '',
+                    }
                     cause = None
-                    if msg.get('cause', None) == None:
-                        cause = ' died of mysterious causes'
-                    elif msg['cause']['type'] == 'locomotive':
-                        cause = ' was squished by a rogue train'
+                    if msg.get('cause', None) in text:
+                        cause = text[msg['cause']['type']]
                     elif msg['cause']['type'] == 'character':
                         if msg['cause']['player'] == msg['name']:
                             cause = ' lost their will to live'
                         else:
-                            cause = ' was brutally murdered by ' + msg['cause']['player']
-                    elif msg['cause']['type'] == 'tank':
-                        cause = ' was hiding in a tank\'s blind spot'
-                    elif msg['cause']['type'] == 'car':
-                        cause = ' was involved in a hit and run'
-                    elif msg['cause']['type'] == 'artillery-turret':
-                        cause = ' was mistaken for the enemy'
+                            cause = f" was brutally murdered by {msg['cause']['player']}"
                     else:
-                        cause = f' was killed by {msg["cause"]["type"]}'
+                        cause = f" was killed by a {msg['cause']['type']}"
 
-                    str = '*' + msg['name'] + cause + '*'
+                    str = f"*{msg['name']}{cause}*"
                     asyncio.ensure_future(channel.send(discord.utils.escape_mentions(str)))
                 elif msg['type'] == 'promoted':
                     pass # do nothing as it fires upon player joining for first time and not at time of promotion which makes it meaningless
@@ -164,12 +178,12 @@ def main():
             since_last_update += 1
             if STATUS_FREQUENCY != 0 and since_last_update > STATUS_FREQUENCY:
                 since_last_update = 0
-                asyncio.ensure_future(channel.send(discord.utils.escape_mentions('*' + await rcon.get_server_status() + '*')))
+                asyncio.ensure_future(channel.send(discord.utils.escape_mentions(f"*{await rcon.get_server_status()}*")))
 
             if message.author == client.user:
                 return
             name = message.author.nick or message.author.name
-            await rcon.send('/fadmin chat ' + name + '*: ' + message.clean_content)
+            await rcon.send(f"/fadmin chat {name}*: {message.clean_content}")
 
         rcon.onmsg = onmsg
         await rcon.connect()
