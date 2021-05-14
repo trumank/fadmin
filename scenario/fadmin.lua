@@ -1,3 +1,5 @@
+local statistics_exporter = require("statistics_exporter")
+
 on_console_chat = function(event)
   local name
   if event.player_index == nil then
@@ -171,6 +173,10 @@ fadmin.add_commands = function()
       if res ~= nil then
         rcon.print(game.table_to_json(global.events))
         global.events = {}
+      end
+      res = string.match(parameter, 'stats')
+      if res ~= nil then
+        rcon.print(game.table_to_json(statistics_exporter.export()))
       end
       res = string.match(parameter, 'chat (.*)')
       if res ~= nil then
