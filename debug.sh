@@ -15,6 +15,10 @@ read-data=__PATH__executable__/../../data
 write-data=.
 EOF
 
-factorio --config config.ini testing --start-server-load-scenario fadmin --rcon-bind "$RCON_HOST:$RCON_PORT" --rcon-password "$RCON_PWD" << EOF
-/promote $DEBUG_PLAYER
-EOF
+echo "[\"$DEBUG_PLAYER\"]" > server-adminlist.json
+factorio --config config.ini testing --start-server-load-scenario fadmin --rcon-bind "$RCON_HOST:$RCON_PORT" --rcon-password "$RCON_PWD" &
+
+PID=$!
+echo $PID > $(cd .. && realpath "$FACTORIO_PIDFILE")
+trap "" SIGINT
+wait $PID

@@ -6,6 +6,8 @@ import json
 import os
 import traceback
 import factorio_rcon
+import prometheus_client
+import prometheus_client.core
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -20,6 +22,7 @@ def removesuffix(text, prefix):
 class RecoveringRCON:
     rcon = None
     connecting = False
+    connected = False
     version = None
 
     def __init__(self, host, port, pwd, onmsg=None):
@@ -42,13 +45,15 @@ class RecoveringRCON:
                 await asyncio.sleep(2)
             else:
                 await self.onmsg({ 'type': 'connected', 'version': self.version })
+                self.connected = True
                 self.connecting = False
                 break
 
     async def send(self, msg):
         try:
-            self.rcon.send_command(msg)
+            return self.rcon.send_command(msg)
         except ConnectionError:
+            self.connected = False
             await self.connect()
         return None
 
@@ -60,6 +65,7 @@ class RecoveringRCON:
             players = await self.get_players()
             return '{} {} online'.format(len(players), 'player' if len(players) == 1 else 'players')
         except ConnectionError:
+            self.connected = False
             return None
 
     async def get_server_status(self):
@@ -67,6 +73,7 @@ class RecoveringRCON:
             players = await self.get_players()
             return 'Version {} - Online players ({}): {}'.format(self.version, len(players), ', '.join(players))
         except ConnectionError:
+            self.connected = False
             return 'Offline'
 
     async def poll(self):
@@ -76,9 +83,65 @@ class RecoveringRCON:
                     for msg in json.loads(self.rcon.send_command('/fadmin poll')):
                         await self.onmsg(msg)
                 except ConnectionError:
+                    self.connected = False
                     await self.onmsg({ 'type': 'disconnected' })
                     await self.connect()
             await asyncio.sleep(.5)
+
+class GameCollector:
+    def __init__(self, rcon, loop):
+        self.rcon = rcon
+        self.loop = loop
+
+    def collect(self):
+        if not self.rcon.connected:
+            return []
+
+        try:
+            result = asyncio.run_coroutine_threadsafe(self.rcon.send('/fadmin stats'), self.loop).result()
+            if not result:
+                return []
+            stats = json.loads(result)
+        except Exception as err:
+            print(err)
+            return []
+
+        gametick = prometheus_client.core.GaugeMetricFamily(
+            'factorio_game_ticks_total', 'Game tick map has progressed to.', value=stats['game_tick'])
+        players = prometheus_client.core.GaugeMetricFamily(
+            'factorio_player_count', 'Amount of players connected to the server.', value=stats['player_count'])
+
+        force_flows = prometheus_client.core.CounterMetricFamily(
+            'factorio_force_flow_statistics', 'Items/fluids/enemies/buildings produced/consumed/built/killed by a force',
+            labels=['force', 'statistic', 'direction', 'name'])
+
+        game_flows  = prometheus_client.core.CounterMetricFamily(
+            'factorio_game_flow_statistics', 'Pollution produced/consumed in the game', labels=['statistic', 'direction', 'name'])
+
+        force_flow_metrics = set()
+        for force_name, flow_statistics in stats['force_flow_statistics'].items():
+            for statistic_name, statistic in flow_statistics.items():
+                for direction, counts in statistic.items():
+                    for item, value in counts.items():
+                        labels = (force_name, statistic_name, direction, item)
+                        force_flows.add_metric(labels, value)
+                        force_flow_metrics.add(labels)
+
+        # For item and fluid statistics it's useful to compare the input flow with the
+        # output flow, to simplify the comparison ensure both directions have a value.
+        for labels in force_flow_metrics:
+            force_name, statistic_name, direction, item = labels
+            if statistic_name in ["item_production_statistics", "fluid_production_statistic"]:
+                direction = "output" if direction == "input" else "input"
+                labels = (force_name, statistic_name, direction, item)
+                if not labels in force_flow_metrics:
+                    force_flows.add_metric(labels, 0)
+
+        for direction, counts in stats['game_flow_statistics']['pollution_statistics'].items():
+            for item, value in counts.items():
+                game_flows.add_metric(["pollution_statistics", direction, item], value)
+
+        return [gametick, players, force_flows, game_flows]
 
 def main():
     rcon = RecoveringRCON(os.getenv('RCON_HOST'), int(os.getenv('RCON_PORT')), os.getenv('RCON_PWD'))
@@ -175,6 +238,17 @@ def main():
         await rcon.connect()
         await rcon.poll()
 
+
+    def factorio_pid():
+        try:
+            with open(os.getenv('FACTORIO_PIDFILE')) as f:
+                return f.read()
+        except OSError:
+            return 'bad_pidfile'
+
+    factorio_process = prometheus_client.ProcessCollector('factorio', factorio_pid)
+    prometheus_client.REGISTRY.register(GameCollector(rcon, client.loop))
+    prometheus_client.start_http_server(int(os.getenv('PROMETHEUS_PORT')), os.getenv('PROMETHEUS_HOST'))
 
     try:
         task = client.loop.create_task(background())
