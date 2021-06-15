@@ -1,10 +1,7 @@
 # poetry config from https://stackoverflow.com/a/54763270/510145
-FROM python:3.7.3-alpine3.9
+FROM python:alpine
 
-ARG YOUR_ENV
-
-ENV YOUR_ENV=${YOUR_ENV} \
-  PYTHONFAULTHANDLER=1 \
+ENV PYTHONFAULTHANDLER=1 \
   PYTHONUNBUFFERED=1 \
   PYTHONHASHSEED=random \
   PIP_NO_CACHE_DIR=off \
@@ -12,7 +9,7 @@ ENV YOUR_ENV=${YOUR_ENV} \
   PIP_DEFAULT_TIMEOUT=100 \
   POETRY_VERSION=1.0.3
 
-RUN apk update && apk add build-base libffi-dev openssl-dev postgresql-dev python3-dev musl-dev
+RUN apk update && apk add build-base libffi-dev openssl-dev python3-dev rust cargo
 
 # System deps:
 RUN pip install "poetry==$POETRY_VERSION"
